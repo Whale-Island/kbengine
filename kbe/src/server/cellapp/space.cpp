@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2017 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technogies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 #include "cellapp.h"
 #include "space.h"	
@@ -240,7 +222,7 @@ PyObject* Space::__py_AddSpaceGeometryMapping(PyObject* self, PyObject* args)
 	Space* space = Spaces::findSpace(spaceID);
 	if(space == NULL)
 	{
-		PyErr_Format(PyExc_AssertionError, "KBEngine::addSpaceGeometryMapping: (spaceID=%u respath=%s) not found!", 
+		PyErr_Format(PyExc_AssertionError, "KBEngine::addSpaceGeometryMapping: spaceID error! spaceID=%u respath=%s", 
 			spaceID, path);
 
 		PyErr_PrintEx(0);
@@ -251,7 +233,7 @@ PyObject* Space::__py_AddSpaceGeometryMapping(PyObject* self, PyObject* args)
 
 	if (Resmgr::getSingleton().matchPath(path).size() == 0)
 	{
-		PyErr_Format(PyExc_AssertionError, "KBEngine::addSpaceGeometryMapping: (spaceID=%u respath=%s) path error!",
+		PyErr_Format(PyExc_AssertionError, "KBEngine::addSpaceGeometryMapping: path error! spaceID=%u respath=%s",
 			spaceID, path);
 
 		PyErr_PrintEx(0);
@@ -330,7 +312,7 @@ void Space::onLoadedSpaceGeometryMapping(NavigationHandlePtr pNavHandle)
 	{
 		SCOPED_PROFILE(SCRIPTCALL_PROFILE);
 		SCRIPT_OBJECT_CALL_ARGS2(Cellapp::getSingleton().getEntryScript().get(), const_cast<char*>("onSpaceGeometryLoaded"), 
-			const_cast<char*>("Is"), this->id(), getGeometryPath().c_str());
+			const_cast<char*>("Is"), this->id(), getGeometryPath().c_str(), false);
 	}
 
 	onAllSpaceGeometryLoaded();
@@ -358,7 +340,7 @@ void Space::onAllSpaceGeometryLoaded()
 
 	// Í¨Öª½Å±¾
 	SCRIPT_OBJECT_CALL_ARGS3(Cellapp::getSingleton().getEntryScript().get(), const_cast<char*>("onAllSpaceGeometryLoaded"), 
-		const_cast<char*>("Iis"), this->id(), true, getGeometryPath().c_str());
+		const_cast<char*>("Iis"), this->id(), true, getGeometryPath().c_str(), false);
 }
 
 //-------------------------------------------------------------------------------------
@@ -631,13 +613,13 @@ void Space::onSpaceDataChanged(const std::string& key, const std::string& value,
 	{
 		SCOPED_PROFILE(SCRIPTCALL_PROFILE);
 		SCRIPT_OBJECT_CALL_ARGS3(Cellapp::getSingleton().getEntryScript().get(), const_cast<char*>("onSpaceData"), 
-			const_cast<char*>("Iss"), this->id(), key.c_str(), value.c_str());
+			const_cast<char*>("Iss"), this->id(), key.c_str(), value.c_str(), false);
 	}
 	else
 	{
 		SCOPED_PROFILE(SCRIPTCALL_PROFILE);
 		SCRIPT_OBJECT_CALL_ARGS3(Cellapp::getSingleton().getEntryScript().get(), const_cast<char*>("onSpaceData"), 
-			const_cast<char*>("IsO"), this->id(), key.c_str(), Py_None);
+			const_cast<char*>("IsO"), this->id(), key.c_str(), Py_None, false);
 	}
 
 	SPACE_ENTITIES::const_iterator iter = this->entities().begin();
@@ -649,11 +631,11 @@ void Space::onSpaceDataChanged(const std::string& key, const std::string& value,
 			continue;
 
 		Network::Bundle* pSendBundle = Network::Bundle::createPoolObject();
-		NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_START(pEntity->id(), (*pSendBundle));
+		NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pEntity->id(), (*pSendBundle));
 		
 		if(!isdel)
 		{
-			ENTITY_MESSAGE_FORWARD_CLIENT_START(pSendBundle, ClientInterface::setSpaceData, set);
+			ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, ClientInterface::setSpaceData, set);
 			(*pSendBundle) << this->id();
 			(*pSendBundle) << key;
 			(*pSendBundle) << value;
@@ -661,7 +643,7 @@ void Space::onSpaceDataChanged(const std::string& key, const std::string& value,
 		}
 		else
 		{
-			ENTITY_MESSAGE_FORWARD_CLIENT_START(pSendBundle, ClientInterface::delSpaceData, del);
+			ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, ClientInterface::delSpaceData, del);
 			(*pSendBundle) << this->id();
 			(*pSendBundle) << key;
 			ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, ClientInterface::delSpaceData, del);
@@ -696,9 +678,9 @@ void Space::_addSpaceDatasToEntityClient(const Entity* pEntity)
 	}
 
 	Network::Bundle* pSendBundle = Network::Bundle::createPoolObject();
-	NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_START(pEntity->id(), (*pSendBundle));
+	NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pEntity->id(), (*pSendBundle));
 
-	ENTITY_MESSAGE_FORWARD_CLIENT_START(pSendBundle, ClientInterface::initSpaceData, init);
+	ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, ClientInterface::initSpaceData, init);
 	(*pSendBundle) << this->id();
 
 	SPACE_DATA::iterator iter = datas_.begin();

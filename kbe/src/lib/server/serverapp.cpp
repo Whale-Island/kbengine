@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2017 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technogies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 
 #include "serverapp.h"
@@ -152,10 +134,10 @@ bool ServerApp::installSignals()
 //-------------------------------------------------------------------------------------		
 bool ServerApp::initialize()
 {
-	if(!initThreadPool())
+	if (!installSignals())
 		return false;
 
-	if(!installSignals())
+	if(!initThreadPool())
 		return false;
 	
 	if(!loadConfig())
@@ -168,6 +150,10 @@ bool ServerApp::initialize()
 		return false;
 
 	bool ret = initializeEnd();
+
+	// 最后仍然需要设置一次，避免期间被其他第三方库修改
+	if (!installSignals())
+		return false;
 
 #ifdef ENABLE_WATCHERS
 	return ret && initializeWatcher();
@@ -264,7 +250,7 @@ void ServerApp::handleTimeout(TimerHandle, void * arg)
 //-------------------------------------------------------------------------------------
 void ServerApp::handleTimers()
 {
-	AUTO_SCOPED_PROFILE("callTimers");
+	AUTO_SCOPED_PROFILE("callScriptTimers");
 	timers().process(g_kbetime);
 }
 
@@ -476,7 +462,7 @@ void ServerApp::lookApp(Network::Channel* pChannel)
 	if(pChannel->isExternal())
 		return;
 
-	DEBUG_MSG(fmt::format("ServerApp::lookApp: {}, componentID={}\n", pChannel->c_str(), g_componentID));
+	//DEBUG_MSG(fmt::format("ServerApp::lookApp: {}, componentID={}\n", pChannel->c_str(), g_componentID));
 
 	Network::Bundle* pBundle = Network::Bundle::createPoolObject();
 	
@@ -488,7 +474,7 @@ void ServerApp::lookApp(Network::Channel* pChannel)
 	(*pBundle) << istate;
 
 	pChannel->send(pBundle);
-	DEBUG_MSG(fmt::format("ServerApp::lookApp: response! componentID={}\n", g_componentID));
+	//DEBUG_MSG(fmt::format("ServerApp::lookApp: response! componentID={}\n", g_componentID));
 }
 
 //-------------------------------------------------------------------------------------

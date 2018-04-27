@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2017 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technogies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 #include "entity_table_mysql.h"
 #include "kbe_table_mysql.h"
@@ -398,7 +380,7 @@ bool KBEAccountTableMysql::syncToDB(DBInterface* pdbi)
 		"(`accountName` varchar({}) not null, PRIMARY KEY idKey (`accountName`),"
 		"`password` varchar({}),"
 			"`bindata` blob,"
-			"`email` varchar(255) not null, UNIQUE KEY `email` (`email`),"
+			"`email` varchar(191) not null, UNIQUE KEY `email` (`email`),"
 			"`entityDBID` bigint(20) unsigned not null DEFAULT 0, UNIQUE KEY `entityDBID` (`entityDBID`),"
 			"`flags` int unsigned not null DEFAULT 0,"
 			"`deadline` bigint(20) not null DEFAULT 0,"
@@ -441,7 +423,7 @@ bool KBEAccountTableMysql::setFlagsDeadline(DBInterface * pdbi, const std::strin
 //-------------------------------------------------------------------------------------
 bool KBEAccountTableMysql::queryAccount(DBInterface * pdbi, const std::string& name, ACCOUNT_INFOS& info)
 {
-	std::string sqlstr = "select entityDBID, password, flags, deadline from " KBE_TABLE_PERFIX "_accountinfos where accountName=\"";
+	std::string sqlstr = "select entityDBID, password, flags, deadline, bindata from " KBE_TABLE_PERFIX "_accountinfos where accountName=\"";
 
 	char* tbuf = new char[name.size() * 2 + 1];
 
@@ -465,12 +447,16 @@ bool KBEAccountTableMysql::queryAccount(DBInterface * pdbi, const std::string& n
 		MYSQL_ROW arow = mysql_fetch_row(pResult);
 		if(arow != NULL)
 		{
+			unsigned long *lengths = mysql_fetch_lengths(pResult);
+
 			KBEngine::StringConv::str2value(info.dbid, arow[0]);
 			info.name = name;
 			info.password = arow[1];
 
 			KBEngine::StringConv::str2value(info.flags, arow[2]);
 			KBEngine::StringConv::str2value(info.deadline, arow[3]);
+
+			info.datas.assign(arow[4], lengths[4]);
 		}
 
 		mysql_free_result(pResult);
